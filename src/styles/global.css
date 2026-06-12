@@ -459,6 +459,16 @@ button {
   background: #fff;
 }
 
+.task-item--tp {
+  border-color: rgba(47, 125, 111, 0.45);
+  background: #edf6f3;
+}
+
+.task-item--parcial {
+  border-color: rgba(215, 111, 77, 0.45);
+  background: #fde7dd;
+}
+
 .task-list label {
   display: flex;
   align-items: flex-start;
@@ -664,6 +674,26 @@ button {
 .calendar-day.has-event {
   border-color: rgba(47, 125, 111, 0.45);
   background: #edf6f3;
+}
+
+.calendar-label {
+  display: inline-flex;
+  margin-top: 8px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.calendar-label--tp {
+  background: #d2f0e5;
+  color: #1d554b;
+}
+
+.calendar-label--parcial {
+  background: #fde7dd;
+  color: #9e3820;
 }
 
 .calendar-day.is-today {
@@ -978,4 +1008,118 @@ select {
     margin-top: 12px;
     font-size: 0.68rem;
   }
+}
+
+/* Modal styles */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.is-open {
+  display: flex;
+}
+
+.modal-dialog {
+  background: white;
+  border-radius: var(--radius);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.modal-close:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.modal-body input,
+.modal-body select {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--ink);
+}
+
+.modal-body input:focus,
+.modal-body select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(47, 125, 111, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.modal-actions button {
+  flex: 1;
 }

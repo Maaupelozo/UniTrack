@@ -36,8 +36,8 @@ const calendarDays = Array.from({ length: 30 }, (_, index) => index + 1);
         <ul class="task-list" id="calendar-tareas">
           <li>
             <span>
-              <strong>No hay pendientes</strong>
-              <small>Los trabajos practicos cargados por tu usuario apareceran aca.</small>
+              <strong>No hay entregas</strong>
+              <small>Los parciales y TPs cargados por tu usuario apareceran aca.</small>
             </span>
           </li>
         </ul>
@@ -78,9 +78,10 @@ const calendarDays = Array.from({ length: 30 }, (_, index) => index + 1);
         const date = new Date(item.fecha);
         const day = calendarGrid.querySelector(`[data-day="${date.getDate()}"]`);
         if (!day) return;
-        day.classList.add("has-event");
+        day.classList.add("has-event", `event-${item.tipo}`);
         const label = document.createElement("span");
-        label.textContent = item.tipo;
+        label.textContent = item.tipo === "tp" ? "TP" : item.tipo;
+        label.className = `calendar-label calendar-label--${item.tipo}`;
         day.append(label);
       });
     }
@@ -111,14 +112,14 @@ const calendarDays = Array.from({ length: 30 }, (_, index) => index + 1);
         </article>
       `;
 
-      const tareas = agenda.filter((item) => item.tipo === "tp");
+      const tareas = agenda.filter((item) => item.tipo === "tp" || item.tipo === "parcial");
       tareasContainer.innerHTML = tareas.length ? tareas.map((item) => `
-        <li>
+        <li class="task-item task-item--${item.tipo}">
           <label>
             <input type="checkbox" ${item.estado === "entregado" || item.estado === "aprobado" ? "checked" : ""} />
             <span>
               <strong>${item.titulo}</strong>
-              <small>${item.materia} · ${formatDate(item.fecha)}</small>
+              <small>${item.materia} · ${item.tipo.toUpperCase()} · ${formatDate(item.fecha)}</small>
             </span>
           </label>
         </li>

@@ -19,7 +19,7 @@ import Card from "../components/Card.astro";
         </p>
         <div class="hero-card__actions">
           <a class="button" href="/materias">Agregar materia</a>
-          <a class="button button--ghost" href="/calendario">Ver calendario</a>
+          <button class="button button--ghost" id="btn-agregar-pendiente">Agregar pendiente</button>
         </div>
       </div>
       <div class="focus-meter">
@@ -30,13 +30,16 @@ import Card from "../components/Card.astro";
     </Card>
 
     <div class="metric-row">
-      <Card eyebrow="Materias" title="0">
+      <Card eyebrow="Materias">
+        <h2 id="metric-materias-title">0</h2>
         <p id="metric-materias">sin materias cargadas</p>
       </Card>
-      <Card eyebrow="Parciales" title="0">
+      <Card eyebrow="Parciales">
+        <h2 id="metric-parciales-title">0</h2>
         <p id="metric-parciales">sin evaluaciones cargadas</p>
       </Card>
-      <Card eyebrow="Agenda" title="0">
+      <Card eyebrow="Agenda">
+        <h2 id="metric-agenda-title">0</h2>
         <p id="metric-agenda">sin eventos cargados</p>
       </Card>
     </div>
@@ -50,7 +53,7 @@ import Card from "../components/Card.astro";
       </div>
     </Card>
 
-    <Card title="Pendientes cercanos">
+    <Card title="TPs cercanos">
       <ul class="task-list" id="dashboard-tareas">
         <li>
           <span>
@@ -71,20 +74,74 @@ import Card from "../components/Card.astro";
     </Card>
   </section>
 
+  <!-- Modal para agregar pendiente -->
+  <div id="pendiente-modal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>Agregar pendiente</h2>
+        <button class="modal-close" aria-label="Cerrar">&times;</button>
+      </div>
+      <form id="pendiente-form" class="modal-body">
+        <label>
+          Tipo
+          <select id="pendiente-tipo" required>
+            <option value="">Selecciona un tipo</option>
+            <option value="tp">Trabajo Practico (TP)</option>
+            <option value="parcial">Parcial</option>
+          </select>
+        </label>
+        <label>
+          Materia
+          <select id="pendiente-materia" required>
+            <option value="">Selecciona una materia</option>
+          </select>
+        </label>
+        <label>
+          Titulo/Descripcion
+          <input id="pendiente-titulo" type="text" placeholder="Ej: Entrega del proyecto final" required />
+        </label>
+        <label>
+          Fecha de entrega
+          <input id="pendiente-fecha" type="date" required />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="button button--ghost" id="pendiente-cancel">Cancelar</button>
+          <button type="submit" class="button">Guardar pendiente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     import { supabase } from "../services/supabase.js";
     import { getMateriasFromSupabase } from "../services/materias.js";
-    import { getAgendaAcademica } from "../services/parciales.js";
+    import { getAgendaAcademica, createPendiente, deleteTrabajoPractico } from "../services/parciales.js";
 
     const materiasContainer = document.querySelector("#dashboard-materias");
     const tareasContainer = document.querySelector("#dashboard-tareas");
     const agendaContainer = document.querySelector("#dashboard-agenda");
+    const metricMateriasTitle = document.querySelector("#metric-materias-title");
     const metricMaterias = document.querySelector("#metric-materias");
+    const metricParcialesTitle = document.querySelector("#metric-parciales-title");
     const metricParciales = document.querySelector("#metric-parciales");
+    const metricAgendaTitle = document.querySelector("#metric-agenda-title");
     const metricAgenda = document.querySelector("#metric-agenda");
     const title = document.querySelector("#dashboard-title");
     const state = document.querySelector("#dashboard-state");
     const stateCopy = document.querySelector("#dashboard-state-copy");
+
+    // Modal de pendientes
+    const pendienteModal = document.querySelector("#pendiente-modal");
+    const pendienteForm = document.querySelector("#pendiente-form");
+    const pendienteTipo = document.querySelector("#pendiente-tipo");
+    const pendienteMateria = document.querySelector("#pendiente-materia");
+    const pendienteTitulo = document.querySelector("#pendiente-titulo");
+    const pendienteFecha = document.querySelector("#pendiente-fecha");
+    const btnAgregarPendiente = document.querySelector("#btn-agregar-pendiente");
+    const pendienteClose = pendienteModal.querySelector(".modal-close");
+    const pendienteCancel = document.querySelector("#pendiente-cancel");
+
+    let materiasData = [];
 
     function formatDate(value) {
       if (!value) return "Sin fecha";
@@ -101,6 +158,7 @@ import Card from "../components/Card.astro";
     }
 
     function renderMaterias(items) {
+      metricMateriasTitle.textContent = items.length;
       if (!items.length) {
         materiasContainer.innerHTML = `
           <article class="empty-panel">
@@ -108,9 +166,13 @@ import Card from "../components/Card.astro";
             <span>Agrega tu primera materia desde la pagina Materias.</span>
           </article>
         `;
+        metricMaterias.textContent = "sin materias cargadas";
         return;
       }
 
+      metricMaterias.textContent = items.length === 1
+        ? "Estás inscripto en 1 materia"
+        : `Estás inscripto en ${items.length} materias`;
       materiasContainer.innerHTML = items.slice(0, 4).map((materia) => `
         <a class="subject-row" href="/materias" style="--accent: #2f7d6f">
           <span class="subject-row__dot"></span>
@@ -129,10 +191,10 @@ import Card from "../components/Card.astro";
 
     function renderAgenda(items) {
       const trabajos = items.filter((item) => item.tipo === "tp");
-      const parciales = items.filter((item) => item.tipo === "parcial");
+      const evaluaciones = items.filter((item) => item.tipo === "parcial" || item.tipo === "final");
 
       tareasContainer.innerHTML = trabajos.length ? trabajos.slice(0, 5).map((item) => `
-        <li>
+        <li class="task-item task-item--tp" data-task-id="${item.id}">
           <label>
             <input type="checkbox" ${item.estado === "entregado" || item.estado === "aprobado" ? "checked" : ""} />
             <span>
@@ -140,6 +202,7 @@ import Card from "../components/Card.astro";
               <small>${item.materia} · ${formatDate(item.fecha)}</small>
             </span>
           </label>
+          <button type="button" class="button button--ghost button--small task-delete">Borrar</button>
         </li>
       `).join("") : `
         <li>
@@ -150,7 +213,7 @@ import Card from "../components/Card.astro";
         </li>
       `;
 
-      agendaContainer.innerHTML = items.length ? items.slice(0, 6).map((item) => `
+      agendaContainer.innerHTML = evaluaciones.length ? evaluaciones.slice(0, 6).map((item) => `
         <article class="timeline__item">
           <time>${formatDate(item.fecha)}</time>
           <div>
@@ -166,11 +229,13 @@ import Card from "../components/Card.astro";
         </article>
       `;
 
+      metricAgendaTitle.textContent = items.length;
       metricAgenda.textContent = items.length
         ? `${items.length} evento(s) en agenda`
         : "sin eventos cargados";
-      metricParciales.textContent = parciales.length
-        ? `${parciales.length} parcial(es) cargado(s)`
+      metricParcialesTitle.textContent = evaluaciones.length;
+      metricParciales.textContent = evaluaciones.length
+        ? `${evaluaciones.length} evaluacion(es) cargada(s)`
         : "sin evaluaciones cargadas";
     }
 
@@ -186,13 +251,84 @@ import Card from "../components/Card.astro";
         getAgendaAcademica()
       ]);
 
+      materiasData = materias;
       title.textContent = materias.length ? "Tu semana academica" : "Empeza cargando tus materias reales.";
       renderMaterias(materias);
       renderAgenda(agenda);
     }
 
+    function openPendienteModal() {
+      pendienteMateria.innerHTML = `
+        <option value="">Selecciona una materia</option>
+        ${materiasData.map((m) => `<option value="${m.id}">${m.nombre}</option>`).join("")}
+      `;
+      pendienteModal.classList.add("is-open");
+    }
+
+    function closePendienteModal() {
+      pendienteModal.classList.remove("is-open");
+      pendienteForm.reset();
+    }
+
+    // Event listeners para modal
+    if (btnAgregarPendiente) {
+      btnAgregarPendiente.addEventListener("click", openPendienteModal);
+    }
+    if (pendienteClose) {
+      pendienteClose.addEventListener("click", closePendienteModal);
+    }
+    if (pendienteCancel) {
+      pendienteCancel.addEventListener("click", closePendienteModal);
+    }
+    if (pendienteModal) {
+      pendienteModal.addEventListener("click", (e) => {
+        if (e.target === pendienteModal) closePendienteModal();
+      });
+    }
+
+    if (pendienteForm) {
+      pendienteForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        try {
+          await createPendiente({
+            tipo: pendienteTipo.value,
+            materia_id: pendienteMateria.value,
+            titulo: pendienteTitulo.value,
+            fecha: pendienteFecha.value
+          });
+
+          closePendienteModal();
+          await syncDashboard();
+        } catch (error) {
+          console.error("Error al crear pendiente:", error);
+          alert("Error: " + error.message);
+        }
+      });
+    }
+
+    tareasContainer.addEventListener("click", async (event) => {
+      const button = event.target.closest(".task-delete");
+      if (!button) return;
+
+      const taskItem = button.closest(".task-item");
+      if (!taskItem) return;
+
+      const trabajoId = taskItem.dataset.taskId;
+      if (!trabajoId) return;
+
+      try {
+        await deleteTrabajoPractico(trabajoId);
+        await syncDashboard();
+      } catch (error) {
+        console.error("Error al borrar TP:", error);
+        alert("No se pudo borrar el TP.");
+      }
+    });
+
     syncDashboard().catch((error) => {
       console.error("No se pudo sincronizar el dashboard", error);
     });
+
   </script>
 </MainLayout>

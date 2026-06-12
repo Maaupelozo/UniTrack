@@ -33,6 +33,10 @@ import MainLayout from "../layouts/MainLayout.astro";
           <option value="2">Segundo</option>
         </select>
       </label>
+      <label>
+        Nota final
+        <input name="nota_final" type="number" min="0" max="10" step="0.1" placeholder="8.5" />
+      </label>
       <button class="button" type="submit">Guardar materia</button>
       <p id="materias-message" class="form-message" role="status"></p>
     </form>
@@ -46,13 +50,69 @@ import MainLayout from "../layouts/MainLayout.astro";
     </article>
   </section>
 
+  <section class="subject-detail" id="materia-detail">
+    <article class="card empty-state">
+      <span class="eyebrow">Selecciona una materia</span>
+      <h2>Elige una materia para ver el seguimiento</h2>
+      <p>Veras un cuadro con tus notas de parciales y trabajos practicos de la materia seleccionada.</p>
+    </article>
+  </section>
+
+  <!-- Modal para editar notas -->
+  <div id="notas-modal" class="modal-overlay">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>Agregar notas de <span id="notas-modal-titulo">materia</span></h2>
+        <button class="modal-close" aria-label="Cerrar">&times;</button>
+      </div>
+      <form id="notas-form" class="modal-body">
+        <label>
+          Estado
+          <select id="notas-estado">
+            <option value="cursando">Cursando</option>
+            <option value="aprobada">Aprobada</option>
+            <option value="regularizada">Regularizada</option>
+            <option value="libre">Libre</option>
+          </select>
+        </label>
+        <label>
+          Nota TP
+          <input id="notas-tp" type="number" min="0" max="10" step="0.1" placeholder="8.5" />
+        </label>
+        <label>
+          Nota Parciales
+          <input id="notas-parcial" type="number" min="0" max="10" step="0.1" placeholder="7.5" />
+        </label>
+        <div class="modal-actions">
+          <button type="button" class="button button--ghost" id="notas-cancel">Cancelar</button>
+          <button type="submit" class="button">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     import { supabase } from "../services/supabase.js";
-    import { createMateria, getMateriasFromSupabase } from "../services/materias.js";
+    import { createMateria, getMateriasFromSupabase, updateMateriaEstado } from "../services/materias.js";
+    import { getParcialesFromSupabase, getTrabajosFromSupabase, updateNotaTrabajo, updateNotaParcial } from "../services/parciales.js";
 
     const grid = document.querySelector("#materias-grid");
     const form = document.querySelector("#create-materia-form");
     const message = document.querySelector("#materias-message");
+    const detailPanel = document.querySelector("#materia-detail");
+    const notasModal = document.querySelector("#notas-modal");
+    const notasForm = document.querySelector("#notas-form");
+    const notasModalTitulo = document.querySelector("#notas-modal-titulo");
+    const notasClose = notasModal.querySelector(".modal-close");
+    const notasCancel = document.querySelector("#notas-cancel");
+    const notasEstado = document.querySelector("#notas-estado");
+    const notasTP = document.querySelector("#notas-tp");
+    const notasParcial = document.querySelector("#notas-parcial");
+    
+    let currentMaterias = [];
+    let parcialesItems = [];
+    let trabajosItems = [];
+    let selectedMateria = null;
 
     function setMessage(text, type = "info") {
       message.textContent = text;
@@ -74,6 +134,20 @@ import MainLayout from "../layouts/MainLayout.astro";
       return labels[estado] || estado;
     }
 
+    function openNotasModal(materia) {
+      selectedMateria = materia;
+      notasModalTitulo.textContent = materia.nombre;
+      notasEstado.value = materia.estado || "cursando";
+      notasTP.value = materia.nota_tp_promedio ?? "";
+      notasParcial.value = materia.nota_parcial_promedio ?? "";
+      notasModal.classList.add("is-open");
+    }
+
+    function closeNotasModal() {
+      notasModal.classList.remove("is-open");
+      selectedMateria = null;
+    }
+
     function renderMaterias(items) {
       if (!items.length) {
         grid.innerHTML = `
@@ -87,7 +161,7 @@ import MainLayout from "../layouts/MainLayout.astro";
       }
 
       grid.innerHTML = items.map((materia) => `
-        <article class="card subject-card" style="--accent: #2f7d6f">
+        <article class="card subject-card" style="--accent: #2f7d6f" data-id="${materia.id}">
           <div class="subject-card__top">
             <span>${materia.anio ? `${materia.anio} ano` : "Sin ano"}</span>
             <strong>${estadoLabel(materia.estado)}</strong>
@@ -110,6 +184,19 @@ import MainLayout from "../layouts/MainLayout.astro";
           </div>
         </article>
       `).join("");
+      
+      attachMateriaSelection();
+    }
+
+    function attachMateriaSelection() {
+      grid.querySelectorAll(".subject-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const materiaId = card.dataset.id;
+          const materia = currentMaterias.find((item) => String(item.id) === String(materiaId));
+          if (!materia) return;
+          openNotasModal(materia);
+        });
+      });
     }
 
     async function loadMaterias() {
@@ -119,10 +206,47 @@ import MainLayout from "../layouts/MainLayout.astro";
         return;
       }
 
-      const items = await getMateriasFromSupabase();
-      renderMaterias(items);
-      setMessage(`${items.length} materia(s) sincronizada(s) con Supabase.`);
+      currentMaterias = await getMateriasFromSupabase();
+      const [parciales, trabajos] = await Promise.all([
+        getParcialesFromSupabase(),
+        getTrabajosFromSupabase()
+      ]);
+
+      parcialesItems = parciales;
+      trabajosItems = trabajos;
+      renderMaterias(currentMaterias);
+      setMessage(`${currentMaterias.length} materia(s) sincronizada(s) con Supabase.`);
     }
+
+    // Event listeners para modal de notas
+    notasClose.addEventListener("click", closeNotasModal);
+    notasCancel.addEventListener("click", closeNotasModal);
+    notasModal.addEventListener("click", (e) => {
+      if (e.target === notasModal) closeNotasModal();
+    });
+
+    notasForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selectedMateria) return;
+
+      try {
+        const notaTP = notasTP.value ? Number(notasTP.value) : null;
+        const notaParcial = notasParcial.value ? Number(notasParcial.value) : null;
+        const estado = notasEstado.value;
+
+        if (estado !== selectedMateria.estado) {
+          await updateMateriaEstado(selectedMateria.id, estado);
+        }
+        if (notaTP !== null) await updateNotaTrabajo(selectedMateria.id, notaTP);
+        if (notaParcial !== null) await updateNotaParcial(selectedMateria.id, notaParcial);
+
+        setMessage("Cambios guardados correctamente", "success");
+        closeNotasModal();
+        await loadMaterias();
+      } catch (error) {
+        setMessage(error.message, "error");
+      }
+    });
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -134,6 +258,7 @@ import MainLayout from "../layouts/MainLayout.astro";
           nombre: String(formData.get("nombre") || "").trim(),
           anio: formData.get("anio"),
           cuatrimestre: formData.get("cuatrimestre"),
+          nota_final: formData.get("nota_final"),
           estado: "cursando"
         });
         form.reset();

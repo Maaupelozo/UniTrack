@@ -90,6 +90,78 @@ export async function createParcial(input) {
   return data;
 }
 
+export async function updateNotaParcial(materiaId, nota) {
+  const { data, error } = await supabase
+    .from("materias")
+    .update({ nota_parcial_promedio: Number(nota) })
+    .eq("id", materiaId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function updateNotaTrabajo(materiaId, nota) {
+  const { data, error } = await supabase
+    .from("materias")
+    .update({ nota_tp_promedio: Number(nota) })
+    .eq("id", materiaId)
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteTrabajoPractico(trabajoId) {
+  const { data, error } = await supabase
+    .from("trabajos_practicos")
+    .delete()
+    .eq("id", trabajoId)
+    .select();
+
+  if (error) throw error;
+  return data;
+}
+
+export async function createPendiente(input) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Necesitas iniciar sesion.");
+
+  const tipo = input.tipo;
+
+  if (tipo === "tp") {
+    const { data, error } = await supabase
+      .from("trabajos_practicos")
+      .insert({
+        materia_id: input.materia_id,
+        titulo: input.titulo,
+        fecha_entrega: input.fecha,
+        estado: "pendiente"
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  } else if (tipo === "parcial") {
+    const { data, error } = await supabase
+      .from("parciales")
+      .insert({
+        materia_id: input.materia_id,
+        titulo: input.titulo,
+        fecha: input.fecha,
+        estado: "pendiente"
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  throw new Error("Tipo de pendiente no valido: " + tipo);
+}
+
 export async function getAgendaAcademica() {
   const [parcialesDb, trabajosDb, eventosDb] = await Promise.all([
     getParcialesFromSupabase(),
