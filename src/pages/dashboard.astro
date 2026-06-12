@@ -1,0 +1,198 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import Card from "../components/Card.astro";
+---
+
+<MainLayout
+  title="Panel - UniTrack"
+  pageTitle="Tu semana academica"
+  subtitle="El tablero se completa solo con los datos que cargues con tu usuario."
+>
+  <section class="dashboard-grid">
+    <Card class="hero-card">
+      <div class="hero-card__copy">
+        <span class="eyebrow">Panel personal</span>
+        <h2 id="dashboard-title">Empeza cargando tus materias reales.</h2>
+        <p>
+          UniTrack no va a inventar materias ni pendientes. Cuando crees tus datos,
+          este panel va a mostrar tu agenda academica real.
+        </p>
+        <div class="hero-card__actions">
+          <a class="button" href="/materias">Agregar materia</a>
+          <a class="button button--ghost" href="/calendario">Ver calendario</a>
+        </div>
+      </div>
+      <div class="focus-meter">
+        <span>Estado</span>
+        <strong id="dashboard-state">Sin datos</strong>
+        <p id="dashboard-state-copy">Inicia sesion y carga tu primera materia.</p>
+      </div>
+    </Card>
+
+    <div class="metric-row">
+      <Card eyebrow="Materias" title="0">
+        <p id="metric-materias">sin materias cargadas</p>
+      </Card>
+      <Card eyebrow="Parciales" title="0">
+        <p id="metric-parciales">sin evaluaciones cargadas</p>
+      </Card>
+      <Card eyebrow="Agenda" title="0">
+        <p id="metric-agenda">sin eventos cargados</p>
+      </Card>
+    </div>
+
+    <Card title="Materias en movimiento" class="span-2">
+      <div class="subject-list" id="dashboard-materias">
+        <article class="empty-panel">
+          <strong>No hay materias todavia</strong>
+          <span>Las materias que crees con tu usuario van a aparecer aca.</span>
+        </article>
+      </div>
+    </Card>
+
+    <Card title="Pendientes cercanos">
+      <ul class="task-list" id="dashboard-tareas">
+        <li>
+          <span>
+            <strong>No hay pendientes</strong>
+            <small>Cuando cargues trabajos practicos, se mostraran aca.</small>
+          </span>
+        </li>
+      </ul>
+    </Card>
+
+    <Card title="Linea de parciales" class="span-3">
+      <div class="timeline" id="dashboard-agenda">
+        <article class="empty-panel">
+          <strong>No hay parciales ni eventos</strong>
+          <span>Tu agenda se va a completar con datos reales de Supabase.</span>
+        </article>
+      </div>
+    </Card>
+  </section>
+
+  <script>
+    import { supabase } from "../services/supabase.js";
+    import { getMateriasFromSupabase } from "../services/materias.js";
+    import { getAgendaAcademica } from "../services/parciales.js";
+
+    const materiasContainer = document.querySelector("#dashboard-materias");
+    const tareasContainer = document.querySelector("#dashboard-tareas");
+    const agendaContainer = document.querySelector("#dashboard-agenda");
+    const metricMaterias = document.querySelector("#metric-materias");
+    const metricParciales = document.querySelector("#metric-parciales");
+    const metricAgenda = document.querySelector("#metric-agenda");
+    const title = document.querySelector("#dashboard-title");
+    const state = document.querySelector("#dashboard-state");
+    const stateCopy = document.querySelector("#dashboard-state-copy");
+
+    function formatDate(value) {
+      if (!value) return "Sin fecha";
+      return new Intl.DateTimeFormat("es-PY", {
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function redirectToLogin() {
+      window.location.href = "/login";
+    }
+
+    function renderMaterias(items) {
+      if (!items.length) {
+        materiasContainer.innerHTML = `
+          <article class="empty-panel">
+            <strong>No hay materias todavia</strong>
+            <span>Agrega tu primera materia desde la pagina Materias.</span>
+          </article>
+        `;
+        return;
+      }
+
+      materiasContainer.innerHTML = items.slice(0, 4).map((materia) => `
+        <a class="subject-row" href="/materias" style="--accent: #2f7d6f">
+          <span class="subject-row__dot"></span>
+          <div>
+            <strong>${materia.nombre}</strong>
+            <small>${materia.estado} · ${materia.anio ? `${materia.anio} ano` : "sin ano"}</small>
+          </div>
+          <div class="db-pill">${materia.nota_final ?? "Sin nota"}</div>
+        </a>
+      `).join("");
+
+      metricMaterias.textContent = `${items.length} materia(s) desde Supabase`;
+      state.textContent = "En marcha";
+      stateCopy.textContent = "Tu panel ya esta usando datos reales.";
+    }
+
+    function renderAgenda(items) {
+      const trabajos = items.filter((item) => item.tipo === "tp");
+      const parciales = items.filter((item) => item.tipo === "parcial");
+
+      tareasContainer.innerHTML = trabajos.length ? trabajos.slice(0, 5).map((item) => `
+        <li>
+          <label>
+            <input type="checkbox" ${item.estado === "entregado" || item.estado === "aprobado" ? "checked" : ""} />
+            <span>
+              <strong>${item.titulo}</strong>
+              <small>${item.materia} · ${formatDate(item.fecha)}</small>
+            </span>
+          </label>
+        </li>
+      `).join("") : `
+        <li>
+          <span>
+            <strong>No hay pendientes</strong>
+            <small>Los trabajos practicos cargados van a aparecer aca.</small>
+          </span>
+        </li>
+      `;
+
+      agendaContainer.innerHTML = items.length ? items.slice(0, 6).map((item) => `
+        <article class="timeline__item">
+          <time>${formatDate(item.fecha)}</time>
+          <div>
+            <span>${item.tipo}</span>
+            <strong>${item.titulo}</strong>
+            <p>${item.materia} · ${item.estado}</p>
+          </div>
+        </article>
+      `).join("") : `
+        <article class="empty-panel">
+          <strong>No hay parciales ni eventos</strong>
+          <span>Carga parciales, TPs o eventos para armar tu linea de tiempo.</span>
+        </article>
+      `;
+
+      metricAgenda.textContent = items.length
+        ? `${items.length} evento(s) en agenda`
+        : "sin eventos cargados";
+      metricParciales.textContent = parciales.length
+        ? `${parciales.length} parcial(es) cargado(s)`
+        : "sin evaluaciones cargadas";
+    }
+
+    async function syncDashboard() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        redirectToLogin();
+        return;
+      }
+
+      const [materias, agenda] = await Promise.all([
+        getMateriasFromSupabase(),
+        getAgendaAcademica()
+      ]);
+
+      title.textContent = materias.length ? "Tu semana academica" : "Empeza cargando tus materias reales.";
+      renderMaterias(materias);
+      renderAgenda(agenda);
+    }
+
+    syncDashboard().catch((error) => {
+      console.error("No se pudo sincronizar el dashboard", error);
+    });
+  </script>
+</MainLayout>

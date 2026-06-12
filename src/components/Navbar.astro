@@ -1,0 +1,26 @@
+---
+import { getSupabaseStatus } from "../services/supabase.js";
+
+const { title = "Panel academico", subtitle = "Organiza materias, parciales y entregas sin perder el hilo." } = Astro.props;
+---
+
+<header class="topbar">
+  <div>
+    <p class="topbar__status">{getSupabaseStatus()}</p>
+    <h1>{title}</h1>
+    <span>{subtitle}</span>
+  </div>
+  <div class="topbar__actions">
+    <button class="icon-button" type="button" aria-label="Buscar">
+      <span class="icon icon--search" aria-hidden="true"></span>
+    </button>
+    <button class="icon-button" type="button" aria-label="Notificaciones">
+      <span class="icon icon--bell" aria-hidden="true"></span>
+      <small></small>
+    </button>
+    <a class="profile-pill" href="/login" aria-label="Perfil">
+      <span>MR</span>
+      <strong>Mi cuenta</strong>
+    </a>
+  </div>
+</header>

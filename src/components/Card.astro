@@ -1,0 +1,13 @@
+---
+const { eyebrow = "", title = "", class: className = "" } = Astro.props;
+---
+
+<article class={`card ${className}`}>
+  {(eyebrow || title) && (
+    <header class="card__header">
+      {eyebrow && <span>{eyebrow}</span>}
+      {title && <h2>{title}</h2>}
+    </header>
+  )}
+  <slot />
+</article>

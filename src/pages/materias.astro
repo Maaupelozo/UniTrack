@@ -1,0 +1,148 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+---
+
+<MainLayout
+  title="Materias - UniTrack"
+  pageTitle="Materias"
+  subtitle="Carga y administra solo las materias creadas por tu usuario."
+>
+  <section class="page-toolbar">
+    <div class="segmented" aria-label="Filtro de materias">
+      <button class="is-active">Todas</button>
+      <button>Cursando</button>
+      <button>Aprobadas</button>
+    </div>
+  </section>
+
+  <section class="quick-add">
+    <form id="create-materia-form" class="quick-add__form">
+      <label>
+        Nueva materia
+        <input name="nombre" type="text" placeholder="Ej: Programacion III" required />
+      </label>
+      <label>
+        Ano
+        <input name="anio" type="number" min="1" max="8" placeholder="2" />
+      </label>
+      <label>
+        Cuatrimestre
+        <select name="cuatrimestre">
+          <option value="">Sin definir</option>
+          <option value="1">Primero</option>
+          <option value="2">Segundo</option>
+        </select>
+      </label>
+      <button class="button" type="submit">Guardar materia</button>
+      <p id="materias-message" class="form-message" role="status"></p>
+    </form>
+  </section>
+
+  <section class="subject-grid" id="materias-grid">
+    <article class="card empty-state">
+      <span class="eyebrow">Sin materias</span>
+      <h2>Todavia no hay materias cargadas</h2>
+      <p>Cuando agregues la primera materia, va a aparecer aca.</p>
+    </article>
+  </section>
+
+  <script>
+    import { supabase } from "../services/supabase.js";
+    import { createMateria, getMateriasFromSupabase } from "../services/materias.js";
+
+    const grid = document.querySelector("#materias-grid");
+    const form = document.querySelector("#create-materia-form");
+    const message = document.querySelector("#materias-message");
+
+    function setMessage(text, type = "info") {
+      message.textContent = text;
+      message.dataset.type = type;
+    }
+
+    function redirectToLogin() {
+      window.location.href = "/login";
+    }
+
+    function estadoLabel(estado) {
+      const labels = {
+        cursando: "Cursando",
+        regularizada: "Regularizada",
+        aprobada: "Aprobada",
+        libre: "Libre",
+        abandonada: "Abandonada"
+      };
+      return labels[estado] || estado;
+    }
+
+    function renderMaterias(items) {
+      if (!items.length) {
+        grid.innerHTML = `
+          <article class="card empty-state">
+            <span class="eyebrow">Base conectada</span>
+            <h2>Todavia no hay materias cargadas</h2>
+            <p>Agrega la primera materia para empezar a usar UniTrack con tus datos reales.</p>
+          </article>
+        `;
+        return;
+      }
+
+      grid.innerHTML = items.map((materia) => `
+        <article class="card subject-card" style="--accent: #2f7d6f">
+          <div class="subject-card__top">
+            <span>${materia.anio ? `${materia.anio} ano` : "Sin ano"}</span>
+            <strong>${estadoLabel(materia.estado)}</strong>
+          </div>
+          <h2>${materia.nombre}</h2>
+          <p>${materia.cuatrimestre ? `${materia.cuatrimestre} cuatrimestre` : "Cuatrimestre sin definir"}</p>
+          <div class="subject-stats">
+            <div>
+              <span>Nota final</span>
+              <strong>${materia.nota_final ?? "-"}</strong>
+            </div>
+            <div>
+              <span>Estado</span>
+              <strong>${estadoLabel(materia.estado)}</strong>
+            </div>
+            <div>
+              <span>Creada</span>
+              <strong>${new Date(materia.created_at).toLocaleDateString("es-PY")}</strong>
+            </div>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    async function loadMaterias() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        redirectToLogin();
+        return;
+      }
+
+      const items = await getMateriasFromSupabase();
+      renderMaterias(items);
+      setMessage(`${items.length} materia(s) sincronizada(s) con Supabase.`);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setMessage("Guardando...");
+      const formData = new FormData(form);
+
+      try {
+        await createMateria({
+          nombre: String(formData.get("nombre") || "").trim(),
+          anio: formData.get("anio"),
+          cuatrimestre: formData.get("cuatrimestre"),
+          estado: "cursando"
+        });
+        form.reset();
+        await loadMaterias();
+      } catch (error) {
+        setMessage(error.message, "error");
+      }
+    });
+
+    loadMaterias().catch((error) => setMessage(error.message, "error"));
+  </script>
+</MainLayout>

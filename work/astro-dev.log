@@ -1,0 +1,64 @@
+
+> unitrack@0.1.0 dev
+> astro dev --host 127.0.0.1 --port 4321
+
+[2m14:24:10[22m [34m[types][39m Generated [2m1ms[22m
+[2m14:24:10[22m [34m[content][39m Syncing content
+[2m14:24:10[22m [34m[content][39m Synced content
+[2m14:24:10[22m [34m[vite][39m Re-optimizing dependencies because vite config has changed
+
+[42m[1m astro [22m[49m [32mv5.18.2[39m [2mready in[22m 277 [2mms[22m
+
+[2m┃[22m Local    [36mhttp://127.0.0.1:4321/[39m
+
+[2m14:24:10[22m [32mwatching for file changes...[39m
+[2m14:24:34[22m [34m[200][39m /calendario [2m48ms[22m
+[2m14:24:34[22m [34m[200][39m /materias [2m50ms[22m
+[2m14:24:34[22m [34m[200][39m /dashboard [2m51ms[22m
+[2m14:27:04[22m [34m[200][39m /dashboard [2m9ms[22m
+[2m14:43:54[22m [34m[200][39m /materias [2m6ms[22m
+[2m14:43:56[22m [34m[200][39m /dashboard [2m6ms[22m
+[2m14:43:57[22m [34m[200][39m /materias [2m4ms[22m
+[2m14:43:57[22m [34m[200][39m /calendario [2m5ms[22m
+[2m14:43:57[22m [34m[200][39m /dashboard [2m6ms[22m
+[2m14:43:58[22m [34m[200][39m /materias [2m4ms[22m
+[2m14:43:58[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:43:58[22m [34m[200][39m /dashboard [2m5ms[22m
+[2m14:43:59[22m [34m[200][39m /materias [2m4ms[22m
+[2m14:43:59[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:43:59[22m [34m[200][39m /dashboard [2m6ms[22m
+[2m14:44:00[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:44:00[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:44:01[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:44:01[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:44:02[22m [34m[200][39m /calendario [2m3ms[22m
+[2m14:44:02[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:44:25[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:44:26[22m [34m[200][39m /dashboard [2m5ms[22m
+[2m14:44:29[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:44:48[22m [34m[200][39m /login [2m4ms[22m
+[2m14:45:01[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:45:14[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:15[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:45:15[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:15[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:45:16[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:45:16[22m [34m[200][39m /dashboard [2m3ms[22m
+[2m14:45:18[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:45:19[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:45:19[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:19[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:45:19[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:45:40[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:41[22m [34m[200][39m /calendario [2m3ms[22m
+[2m14:45:41[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:41[22m [34m[200][39m /dashboard [2m4ms[22m
+[2m14:45:42[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:45:42[22m [34m[200][39m /calendario [2m4ms[22m
+[2m14:45:42[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:43[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:43[22m [34m[200][39m /dashboard [2m5ms[22m
+[2m14:45:43[22m [34m[200][39m /calendario [2m3ms[22m
+[2m14:45:44[22m [34m[200][39m /materias [2m3ms[22m
+[2m14:45:44[22m [34m[200][39m /dashboard [2m3ms[22m
+[2m14:46:10[22m [34m[200][39m /dashboard [2m5ms[22m

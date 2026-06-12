@@ -1,0 +1,43 @@
+---
+import "../styles/global.css";
+import Sidebar from "../components/Sidebar.astro";
+import Navbar from "../components/Navbar.astro";
+
+const {
+  title = "UniTrack",
+  pageTitle = "Panel academico",
+  subtitle = "Organiza materias, parciales y entregas sin perder el hilo.",
+  shell = true
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="UniTrack, gestor academico para estudiantes universitarios." />
+    <title>{title}</title>
+  </head>
+  <body>
+    {shell ? (
+      <div class="app-shell">
+        <Sidebar />
+        <main class="main-panel">
+          <Navbar title={pageTitle} subtitle={subtitle} />
+          <slot />
+        </main>
+      </div>
+    ) : (
+      <slot />
+    )}
+    <script>
+      document.querySelectorAll("[data-open-modal]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const target = document.getElementById(button.getAttribute("data-open-modal"));
+          if (target instanceof HTMLDialogElement) target.showModal();
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+---
+
+<MainLayout title="Ingresar - UniTrack" shell={false}>
+  <main class="login-page">
+    <section class="login-visual" aria-label="Resumen de UniTrack">
+      <a class="brand brand--light" href="/dashboard">
+        <span class="brand__mark">U</span>
+        <span>
+          <strong>UniTrack</strong>
+          <small>tu semestre bajo control</small>
+        </span>
+      </a>
+
+      <div class="login-visual__content">
+        <p class="eyebrow">Version inicial</p>
+        <h1>Entrar, mirar el semestre y saber que hacer despues.</h1>
+        <p>
+          Una vista pensada para estudiantes que necesitan cruzar materias, parciales,
+          asistencia y entregas sin convertir todo en una planilla interminable.
+        </p>
+      </div>
+
+      <div class="study-stack" aria-hidden="true">
+        <div>
+          <span>Paso 1</span>
+          <strong>Crea tu cuenta</strong>
+        </div>
+        <div>
+          <span>Paso 2</span>
+          <strong>Carga tu carrera</strong>
+        </div>
+        <div>
+          <span>Paso 3</span>
+          <strong>Agrega materias</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="login-panel" aria-labelledby="login-title">
+      <div>
+        <span class="eyebrow">Bienvenido</span>
+        <h2 id="login-title">Iniciar sesion</h2>
+        <p>Usa estos campos como flujo visual por ahora. La conexion real queda preparada para Supabase.</p>
+      </div>
+
+      <form class="login-form" id="auth-form">
+        <p class="form-message" id="auth-message" role="status"></p>
+        <label>
+          Correo institucional
+          <input name="email" type="email" placeholder="nombre@universidad.edu.py" required />
+        </label>
+        <label>
+          Contrasena
+          <input name="password" type="password" placeholder="********" minlength="6" required />
+        </label>
+        <div class="form-row">
+          <label class="check">
+            <input type="checkbox" checked />
+            Recordarme
+          </label>
+          <a href="/dashboard">Entrar como demo</a>
+        </div>
+        <button class="button button--wide" type="submit">Ingresar a UniTrack</button>
+        <button class="button button--secondary button--wide" type="button" id="signup-button">
+          Crear cuenta
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    import { supabase, ensureProfile } from "../services/supabase.js";
+
+    const form = document.querySelector("#auth-form");
+    const signupButton = document.querySelector("#signup-button");
+    const message = document.querySelector("#auth-message");
+
+    function setMessage(text, type = "info") {
+      message.textContent = text;
+      message.dataset.type = type;
+    }
+
+    async function readAuthForm() {
+      const formData = new FormData(form);
+      return {
+        email: String(formData.get("email") || "").trim(),
+        password: String(formData.get("password") || "")
+      };
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      setMessage("Ingresando...");
+      const credentials = await readAuthForm();
+      const { data, error } = await supabase.auth.signInWithPassword(credentials);
+
+      if (error) {
+        setMessage(error.message, "error");
+        return;
+      }
+
+      await ensureProfile(data.user);
+      window.location.href = "/dashboard";
+    });
+
+    signupButton.addEventListener("click", async () => {
+      setMessage("Creando cuenta...");
+      const credentials = await readAuthForm();
+      const { data, error } = await supabase.auth.signUp(credentials);
+
+      if (error) {
+        setMessage(error.message, "error");
+        return;
+      }
+
+      if (data.session && data.user) await ensureProfile(data.user);
+      setMessage("Cuenta creada. Si Supabase pide confirmacion, revisa tu correo; si no, ya podes entrar.");
+    });
+  </script>
+</MainLayout>

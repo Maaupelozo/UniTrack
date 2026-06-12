@@ -1,0 +1,16 @@
+---
+import { clamp } from "../utils/helpers.js";
+
+const { value = 0, label = "", tone = "default" } = Astro.props;
+const safeValue = clamp(Number(value));
+---
+
+<div class={`progress progress--${tone}`} aria-label={label}>
+  <div class="progress__meta">
+    {label && <span>{label}</span>}
+    <strong>{safeValue}%</strong>
+  </div>
+  <div class="progress__track">
+    <span style={`width: ${safeValue}%`}></span>
+  </div>
+</div>

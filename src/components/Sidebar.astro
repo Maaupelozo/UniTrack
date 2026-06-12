@@ -1,0 +1,34 @@
+---
+const navItems = [
+  { href: "/dashboard", label: "Panel", icon: "grid" },
+  { href: "/materias", label: "Materias", icon: "book" },
+  { href: "/calendario", label: "Calendario", icon: "calendar" }
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<aside class="sidebar">
+  <a class="brand" href="/dashboard" aria-label="UniTrack">
+    <span class="brand__mark">U</span>
+    <span>
+      <strong>UniTrack</strong>
+      <small>control academico</small>
+    </span>
+  </a>
+
+  <nav class="sidebar__nav" aria-label="Principal">
+    {navItems.map((item) => (
+      <a class:list={["sidebar__link", { "is-active": currentPath === item.href }]} href={item.href}>
+        <span class={`icon icon--${item.icon}`} aria-hidden="true"></span>
+        {item.label}
+      </a>
+    ))}
+  </nav>
+
+  <div class="sidebar__note">
+    <span>Tu espacio</span>
+    <strong>Datos reales</strong>
+    <p>El panel se completa cuando cargues tus materias, parciales y entregas.</p>
+  </div>
+</aside>

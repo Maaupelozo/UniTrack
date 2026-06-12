@@ -1,0 +1,139 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import Card from "../components/Card.astro";
+
+const calendarDays = Array.from({ length: 30 }, (_, index) => index + 1);
+---
+
+<MainLayout
+  title="Calendario - UniTrack"
+  pageTitle="Calendario"
+  subtitle="Las fechas aparecen cuando cargues parciales, TPs o eventos reales."
+>
+  <section class="calendar-layout">
+    <Card title="Junio 2026" class="calendar-card">
+      <div class="calendar-grid" id="calendar-grid" aria-label="Calendario de junio 2026">
+        {["L", "M", "M", "J", "V", "S", "D"].map((day) => <span class="calendar-grid__head">{day}</span>)}
+        {calendarDays.map((day) => (
+          <div class:list={["calendar-day", { "is-today": day === 12 }]} data-day={day}>
+            <strong>{day}</strong>
+          </div>
+        ))}
+      </div>
+    </Card>
+
+    <div class="calendar-side">
+      <Card title="Proximas evaluaciones">
+        <div class="exam-list" id="calendar-agenda">
+          <article class="empty-panel">
+            <strong>No hay evaluaciones cargadas</strong>
+            <span>Los parciales y finales creados por tu usuario apareceran aca.</span>
+          </article>
+        </div>
+      </Card>
+
+      <Card title="Entregas y tareas">
+        <ul class="task-list" id="calendar-tareas">
+          <li>
+            <span>
+              <strong>No hay pendientes</strong>
+              <small>Los trabajos practicos cargados por tu usuario apareceran aca.</small>
+            </span>
+          </li>
+        </ul>
+      </Card>
+    </div>
+  </section>
+
+  <script>
+    import { supabase } from "../services/supabase.js";
+    import { getAgendaAcademica } from "../services/parciales.js";
+
+    const agendaContainer = document.querySelector("#calendar-agenda");
+    const tareasContainer = document.querySelector("#calendar-tareas");
+    const calendarGrid = document.querySelector("#calendar-grid");
+
+    function formatDate(value) {
+      if (!value) return "Sin fecha";
+      return new Intl.DateTimeFormat("es-PY", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(new Date(value));
+    }
+
+    function clearCalendarEvents() {
+      calendarGrid.querySelectorAll(".calendar-day").forEach((day) => {
+        day.classList.remove("has-event");
+        day.querySelectorAll("span").forEach((label) => label.remove());
+      });
+    }
+
+    function renderCalendarMarks(items) {
+      clearCalendarEvents();
+      items.forEach((item) => {
+        if (!item.fecha) return;
+        const date = new Date(item.fecha);
+        const day = calendarGrid.querySelector(`[data-day="${date.getDate()}"]`);
+        if (!day) return;
+        day.classList.add("has-event");
+        const label = document.createElement("span");
+        label.textContent = item.tipo;
+        day.append(label);
+      });
+    }
+
+    async function syncCalendar() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        window.location.href = "/login";
+        return;
+      }
+
+      const agenda = await getAgendaAcademica();
+      renderCalendarMarks(agenda);
+
+      const evaluaciones = agenda.filter((item) => item.tipo === "parcial" || item.tipo === "final");
+      agendaContainer.innerHTML = evaluaciones.length ? evaluaciones.slice(0, 8).map((item) => `
+        <article>
+          <div>
+            <time>${formatDate(item.fecha)}</time>
+            <strong>${item.titulo}</strong>
+            <span>${item.materia} · ${item.tipo} · ${item.estado}</span>
+          </div>
+        </article>
+      `).join("") : `
+        <article class="empty-panel">
+          <strong>No hay evaluaciones cargadas</strong>
+          <span>Los parciales y finales creados por tu usuario apareceran aca.</span>
+        </article>
+      `;
+
+      const tareas = agenda.filter((item) => item.tipo === "tp");
+      tareasContainer.innerHTML = tareas.length ? tareas.map((item) => `
+        <li>
+          <label>
+            <input type="checkbox" ${item.estado === "entregado" || item.estado === "aprobado" ? "checked" : ""} />
+            <span>
+              <strong>${item.titulo}</strong>
+              <small>${item.materia} · ${formatDate(item.fecha)}</small>
+            </span>
+          </label>
+        </li>
+      `).join("") : `
+        <li>
+          <span>
+            <strong>No hay pendientes</strong>
+            <small>Los trabajos practicos cargados por tu usuario apareceran aca.</small>
+          </span>
+        </li>
+      `;
+    }
+
+    syncCalendar().catch((error) => {
+      console.error("No se pudo sincronizar el calendario", error);
+    });
+  </script>
+</MainLayout>
